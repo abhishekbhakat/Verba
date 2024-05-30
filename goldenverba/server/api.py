@@ -252,20 +252,17 @@ async def import_collection(payload: ImportCollectionPayload):
     try:
         files: list[FileData] = []
         text_values: list[str] = []
-        for dir in payload.directories:
-            onlyfiles = [
-                (dir, f)
-                for f in os.listdir(dir)
-                if os.path.isfile(os.path.join(dir, f))
-            ]
-            for dir, file in onlyfiles:
-                with open(os.path.join(dir, file), "r") as fl:
-                    file_ = FileData(
-                        filename=file,
-                        extension=file.split(".")[-1],
-                        content=base64.b64encode(fl.read().encode("utf-8")),
-                    )
-                    files.append(file_)
+        for dir_path in payload.directories:
+            for root, _, filenames in os.walk(dir_path):
+                for file in filenames:
+                    file_path = os.path.join(root, file)
+                    with open(file_path, "r") as fl:
+                        file_ = FileData(
+                            filename=file,
+                            extension=file.split(".")[-1],
+                            content=base64.b64encode(fl.read().encode("utf-8")),
+                        )
+                        files.append(file_)
         if payload.config != {}:
             set_config(manager, payload.config)
         _, logging = manager.import_data(files, text_values, logging)
